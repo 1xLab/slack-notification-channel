@@ -5,8 +5,6 @@ namespace Illuminate\Notifications\Slack;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Response;
 use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\SlackMessage as OldSlackMessage;
-use Illuminate\Notifications\Slack\SlackMessage;
 use Illuminate\Support\Facades\Config;
 use LogicException;
 use RuntimeException;
@@ -39,10 +37,6 @@ class SlackChannel
         $route = $this->determineRoute($notifiable, $notification);
 
         $message = $notification->toSlack($notifiable);
-
-        if ($message instanceof OldSlackMessage) {
-            $message = $this->adaptMessage($message);
-        }
 
         $payload = $this->buildJsonPayload($message, $route);
 
@@ -94,61 +88,5 @@ class SlackChannel
             $route->channel ?? null,
             $route->token ?? Config::get('services.slack.notifications.bot_user_oauth_token'),
         );
-    }
-
-    private function adaptMessage(OldSlackMessage $oldMessage): SlackMessage
-    {
-        $newMessage = new SlackMessage();
-        if (!empty($oldMessage->channel)) { $newMessage->to($oldMessage->channel); }
-        if (!empty($oldMessage->username)) { $newMessage->username($oldMessage->username); }
-        $text = $oldMessage->content ?? 'Notification';
-        $emoji = ':information_source:';
-        if (!empty($oldMessage->attachments)) {
-            $emoji = match (($oldMessage->attachments[0]->color ?? '')) {
-                'good' => ':white_check_mark:', 'danger' => ':x:', 'warning' => ':warning:',
-                default => ':information_source:',
-            };
-        }
-        $newMessage->text(trim($emoji . ' ' . $text));
-        return $newMessage;
-    }
-        if (! empty($data['username'])) {
-            $newMessage->username($data['username']);
-        }
-
-        $text = $data['text'] ?? '';
-        $emoji = ':information_source:';
-        if (! empty($data['attachments'])) {
-            $color = $data['attachments'][0]['color'] ?? '';
-            $emoji = match ($color) {
-                'good' => ':white_check_mark:',
-                'danger' => ':x:',
-                'warning' => ':warning:',
-                default => ':information_source:',
-            };
-        }
-
-        $newMessage->text(trim($emoji . ' ' . ($text ?: 'Notification')));
-
-        if (! empty($data['attachments'])) {
-            foreach ($data['attachments'] as $att) {
-                $ft = '';
-                if (! empty($att['title'])) {
-                    $ft .= '*' . $att['title'] . '*' . "\n";
-                }
-                if (! empty($att['fields'])) {
-                    foreach ($att['fields'] as $f) {
-                        $ft .= $f['title'] . ': ' . $f['value'] . "\n";
-                    }
-                }
-                if ($ft) {
-                    $newMessage->sectionBlock(function ($block) use ($ft) {
-                        $block->text(str_replace('&nbsp;', ' ', $ft));
-                    });
-                }
-            }
-        }
-
-        return $newMessage;
     }
 }
