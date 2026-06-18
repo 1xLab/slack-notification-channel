@@ -47,11 +47,11 @@ class SlackChannel
         $payload = $this->buildJsonPayload($message, $route);
 
         if (! $payload['channel']) {
-            throw new LogicException('Slack notification channel is not set.');
+            return null;
         }
 
         if (! $route->token) {
-            throw new LogicException('Slack API authentication token is not set.');
+            return null;
         }
 
         $response = $this->http->asJson()
