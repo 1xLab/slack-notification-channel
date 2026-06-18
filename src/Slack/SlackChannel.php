@@ -98,12 +98,20 @@ class SlackChannel
 
     private function adaptMessage(OldSlackMessage $oldMessage): SlackMessage
     {
-        $data = $oldMessage->toArray();
         $newMessage = new SlackMessage();
-
-        if (! empty($data['channel'])) {
-            $newMessage->to($data['channel']);
+        if (!empty($oldMessage->channel)) { $newMessage->to($oldMessage->channel); }
+        if (!empty($oldMessage->username)) { $newMessage->username($oldMessage->username); }
+        $text = $oldMessage->content ?? 'Notification';
+        $emoji = ':information_source:';
+        if (!empty($oldMessage->attachments)) {
+            $emoji = match (($oldMessage->attachments[0]->color ?? '')) {
+                'good' => ':white_check_mark:', 'danger' => ':x:', 'warning' => ':warning:',
+                default => ':information_source:',
+            };
         }
+        $newMessage->text(trim($emoji . ' ' . $text));
+        return $newMessage;
+    }
         if (! empty($data['username'])) {
             $newMessage->username($data['username']);
         }
